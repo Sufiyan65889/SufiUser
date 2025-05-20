@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      background: #28a745;
+      color: white;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+    button:hover {
+      background: #1e7e34;
+    }
+    #message {
+      margin-top: 15px;
+      text-align: center;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>User Login</h2>
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="loginUser()">Login</button>
+    <p id="message"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, get, child, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPWXKHHVfevnhu3vX354XXE8dDv-30SQY",
+      authDomain: "injector-admin-cec7d.firebaseapp.com",
+      databaseURL: "https://injector-admin-cec7d-default-rtdb.firebaseio.com",
+      projectId: "injector-admin-cec7d",
+      storageBucket: "injector-admin-cec7d.appspot.com",
+      messagingSenderId: "588477478003",
+      appId: "1:588477478003:web:44ac4d206f4bc32af06606",
+      measurementId: "G-X9H0L872LW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase();
+
+    function getDeviceId() {
+      let id = localStorage.getItem("device_id");
+      if (!id) {
+        id = Math.random().toString(36).substring(2);
+        localStorage.setItem("device_id", id);
+      }
+      return id;
+    }
+
+    window.loginUser = async function () {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const deviceId = getDeviceId();
+
+      if (!username || !password) {
+        document.getElementById("message").innerText = "Please enter all fields.";
+        return;
+      }
+
+      const dbRef = ref(db);
+      const snapshot = await get(child(dbRef, `users/${username}`));
+      
+      if (!snapshot.exists()) {
+        document.getElementById("message").innerText = "User not found!";
+        return;
+      }
+
+      const user = snapshot.val();
+
+      if (user.password !== password) {
+        document.getElementById("message").innerText = "Incorrect password!";
+      } else if (user.status !== "active") {
+        document.getElementById("message").innerText = "Account inactive!";
+      } else if (Date.now() > new Date(user.validUntil).getTime()) {
+        document.getElementById("message").innerText = "Account expired!";
+      } else if (user.deviceId && user.deviceId !== deviceId) {
+        document.getElementById("message").innerText = "This account is already used on another device!";
+      } else {
+        if (!user.deviceId) {
+          await set(ref(db, 'users/' + username + '/deviceId'), deviceId);
+        }
+        document.getElementById("message").innerText = "Login successful!";
+      }
+    }
+  </script>
+</body>
+</html>
