@@ -125,6 +125,9 @@
           await set(ref(db, 'users/' + username + '/deviceId'), deviceId);
         }
         document.getElementById("message").innerText = "Login successful!";
+        setTimeout(() => {
+          window.location.href = "https://sufi-image.vercel.app/";
+        }, 1000);
       }
     }
   </script>
